@@ -14,18 +14,21 @@ import apiUrl from "../systemVariable";
 const App = (props) => {
   const [uploadedPhoto, setUploadedPhoto] = useState(false); 
   const [loginUser, setLoginUser] = useState(null);
-
+  const [cookieUser, setCookieUser] = useState('')
 //get cookie
   const userIdCookie = document.cookie
   .split('; ')
   .find(row => row.startsWith('user_id='))
   ?.split('=')[1];
+  if(userIdCookie){
+    setCookieUser(userIdCookie)
+  }
 //fetch user
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await fetch(
-          `${apiUrl.api}/api/user/${userIdCookie}`, {credentials: "include", withCredentials: true}
+          `${apiUrl.api}/api/user/${cookieUser}`, {credentials: "include", withCredentials: true}
         );
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
@@ -38,7 +41,7 @@ const App = (props) => {
       }
     };
     fetchData();
-  }, [userIdCookie]);
+  }, [cookieUser]);
 
   const handleLoginUserChange = user => {
     setLoginUser(user);
