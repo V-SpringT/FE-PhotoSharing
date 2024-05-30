@@ -4,24 +4,28 @@ import { Navigate } from 'react-router-dom';
 import "./styles.css";
 import { Grid, Paper, Typography, TextField, Button, Snackbar } from '@material-ui/core';
 import {IconButton} from "@mui/material";
-import { ExitToApp, CloseRounded } from '@material-ui/icons';
+import { CloseRounded } from '@material-ui/icons';
 import apiUrl from "../../../systemVariable.js";
 
-// [post] /user/login 
-// [post] /user/register
 function LoginAndRegister(props) {
+  //view
+  const [view, setView] = useState('login')
+
+  //login
   const [loginUsername, setLoginUsername] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+
+  //register
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [registerUsername, setRegisterUsername] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [location, setLocation] = useState('');
-  const [userid, setUserid] = useState();
   const [occupation, setOccupation] = useState();
   const [description,setDescription] = useState();
-  const [loginFalse, setLoginFalse] = useState(false)
+  const [openMessage, setOpenMessage] = useState(false);
+  const [message, setMessage] = useState('')
 
   const handleLoginUsernameChange = (event) => {
     setLoginUsername(event.target.value);
@@ -75,28 +79,26 @@ function LoginAndRegister(props) {
         withCredentials: true
       })
       .then((response) => {
-        console.log('Printing response.data: ', response);
-        setUserid(response.data.id) 
         props.onLoginUserChange(response.data);
         console.log('** LoginRegister: loggin Success! **');
-        if(response.status == '400'){
-          setLoginFalse(true)
-        }
       })
       .catch((error) => {
-        setLoginFalse(true)
+        setOpenMessage(true)
+        setMessage("Thông tin tài khoản không đúng!")
         console.log('** LoginRegister: loggin Fail! **');
         props.onLoginUserChange(null);
       });
   };
   const handleLogoutPromptClose = (event, reason) => {
     if (reason === 'clickaway') return;
-    setLoginFalse(false);
+    setOpenMessage(false);
+    setMessage('')
   };
   const handleRegisterSubmit = (event) => {
     event.preventDefault();
     if (registerPassword !== confirmPassword) {
-      alert("Mật khẩu và mật khẩu xác nhận không khớp!");
+      setMessage("Mật khẩu không khớp!")
+      setOpenMessage(true)
       return;
     }
 
@@ -119,16 +121,16 @@ function LoginAndRegister(props) {
         props.onLoginUserChange(response.data);
       })
       .catch((error) => {
-        setLoginFalse(true)
-        console.log('** LoginRegister: new User loggin Fail! **');
+        setOpenMessage("True");
+        setMessage("Tài khoản đã tồn tại!")
       });
   };
   if(props.loginUser) {
     return <Navigate to={`/users/${props.loginUser._id}`} state={{ from: "/login-register" }} replace />;
   }
   return (
-    <Grid container spacing={2}>
-      <Grid item xs={6}>
+    <Grid justifyContent="center" container spacing={2}>
+      {view === 'login' && (<Grid  item xs={6}>
         <Paper elevation={3} style={{ padding: 20 }}>
           <Typography variant="h6" gutterBottom>
             Đăng nhập
@@ -154,6 +156,14 @@ function LoginAndRegister(props) {
               required
             />
             <Button
+              variant="text"
+              color="primary"
+              onClick={() => setView('register')}
+              style={{ width: 'auto' }}
+            >
+              Chưa có tài khoản? Đăng kí ngay
+            </Button>
+            <Button
               type="submit"
               variant="contained"
               color="primary"
@@ -161,10 +171,11 @@ function LoginAndRegister(props) {
             >
               Đăng nhập
             </Button>
+
           </form>
         </Paper>
-      </Grid>
-      <Grid item xs={6}>
+      </Grid>)}
+      {view === 'register' && (<Grid item xs={6}>
         <Paper elevation={3} style={{ padding: 20 }}>
           <Typography variant="h6" gutterBottom>
             Đăng ký
@@ -244,6 +255,14 @@ function LoginAndRegister(props) {
               onChange={handleDescriptionChange}
             />
             <Button
+              variant="text"
+              color="primary"
+              onClick={() => setView('login')}
+              style={{ width: 'auto' }}
+            >
+              Đã có tài khoản? Đăng nhập ngay
+            </Button>
+            <Button
               type="submit"
               variant="contained"
               color="primary"
@@ -253,18 +272,18 @@ function LoginAndRegister(props) {
             </Button>
           </form>
         </Paper>
-        <Snackbar
-              open={loginFalse}
-              onClose={handleLogoutPromptClose}
-              autoHideDuration={5000}
-              message="Tên đăng nhập đã tồn tại"
-              action={(
-              <IconButton color="secondary" onClick={handleLogoutPromptClose}>
-                <CloseRounded />
-              </IconButton>
-            )}
-          />
-      </Grid>
+      </Grid>)}
+      <Snackbar
+        open={openMessage}
+        onClose={handleLogoutPromptClose}
+        autoHideDuration={5000}
+        message={message}
+        action={(
+          <IconButton color="secondary" onClick={handleLogoutPromptClose}>
+            <CloseRounded />
+          </IconButton>
+        )}
+      />
     </Grid>
   );
 }

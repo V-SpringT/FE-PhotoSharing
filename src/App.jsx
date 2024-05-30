@@ -14,15 +14,19 @@ import apiUrl from "../systemVariable";
 const App = (props) => {
   const [uploadedPhoto, setUploadedPhoto] = useState(false); 
   const [loginUser, setLoginUser] = useState(null);
-  const [cookieUser, setCookieUser] = useState('')
+  const [cookieUser, setCookieUser] = useState()
 //get cookie
-  const userIdCookie = document.cookie
-  .split('; ')
-  .find(row => row.startsWith('user_id='))
-  ?.split('=')[1];
-  if(userIdCookie){
-    setCookieUser(userIdCookie)
-  }
+  useEffect(()=>{
+    const userIdCookie = document.cookie
+    .split('; ')
+    .find(row => row.startsWith('user_id='))
+    ?.split('=')[1];
+    if(userIdCookie){
+      setCookieUser(userIdCookie)
+    }
+    console.log("haha")
+  })
+  
 //fetch user
   useEffect(() => {
     const fetchData = async () => {
@@ -37,7 +41,6 @@ const App = (props) => {
         setLoginUser(result[0]);
       } catch (error) {
         console.error("Error fetching data:", error);
-        setError("An error occurred while fetching the data.");
       }
     };
     fetchData();
