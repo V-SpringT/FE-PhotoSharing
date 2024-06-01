@@ -26,14 +26,14 @@ import apiUrl from "../../../systemVariable.js";
 
 
 function UserPhotos(props) {
-  let navigate = useNavigate();
+  let navigate = useNavigate(); 
   const userid = useParams().userId;
   //-----------fetch API-------------------
   const [open, setOpen] = useState(false);
   const [comment, setComment] = useState("");
   const [data, setData] = useState([]);
   const [user, setUser] = useState([]);
-  const[photoId,setPhotoId] = useState([]);
+  const[photoId,setPhotoId] = useState();
   const [newComment, setNewComment] = useState();
   const [deletedCmt, setDeletedCmt] = useState(false);
   const [deletedPhoto, setDeletedPhoto] = useState(false);
@@ -47,14 +47,12 @@ function UserPhotos(props) {
         ]);
         setUser(userData);
         setData(photoData);
-        setLoading(false);
       } catch (error) {
         console.error("Error fetching data:", error);
-        setError("An error occurred while fetching the data.");
       }
     };
     fetchData();
-  }, [ props.photoIsUploaded,deletedPhoto,deletedCmt,newComment, userid]);
+  }, [props.photoIsUploaded,deletedPhoto,deletedCmt,newComment, userid]);
 
   //User fetch
   const fetchUserData = async () => {
@@ -117,11 +115,11 @@ function UserPhotos(props) {
   const handleCommentSubmit = () => {
     const txtCmt = comment;
     setComment("");
-    setOpen(false);
+    console.log("tesstttt ", data[photoId]._id)
     axios
       .post(
-        `${apiUrl.api}/api/photo/commentsOfPhoto/${photoId}`,
-        { cmt: txtCmt, photo_id: photoId },
+        `${apiUrl.api}/api/photo/commentsOfPhoto/${data[photoId]._id}`,
+        { cmt: txtCmt, photo_id: data[photoId]._id },
         { credentials: "include", withCredentials: true },
       )
       .then((response) => {
@@ -134,7 +132,7 @@ function UserPhotos(props) {
 
   //open dialog comment
   const handleClickOpen = (photoid) => {
-    setPhotoId(photoid)
+    setPhotoId(photoid);
     setOpen(true);
   };
 
@@ -161,10 +159,9 @@ function UserPhotos(props) {
   // giao dien
 
   if (curUser && data.length > 0 && props.loginUser) {
-    {console.log("tesst data", data[0].comments)}
     return (
       <Grid container justifyContent="flex-start" >
-        {data.map((photo) => (
+        {data.map((photo,index) => (
           <Grid item xs={4} >
             {/* post layout  */}
             <Card style={{ borderRadius: "14px", border: "2px solid #444444", margin:'10px' }}>
@@ -217,92 +214,306 @@ function UserPhotos(props) {
                     variant="subtitle1"
                     style={{ marginBottom: "5px" }}
                   >
-                    Comments:
                     <Divider />
                   </Typography>
                 )}
-                {photo.comments.length>0 && (photo.comments.map((c) => (
-                  <div key={photo._id} style={{ marginBottom: "10px" }}>
-                    {c.user &&(<Link
-                      onClick={() => navigate(`/users/${c.user._id}`)}
-                      variant="subtitle2"
-                      style={{ marginRight: "5px",  cursor: 'pointer' }}
-                    >
-                      (<b style={{ fontSize: "14px" }}>
-                        {`${c.user.first_name} ${c.user.last_name}`}
-                      </b>)
-                    </Link> )}
-                    <Typography
-                      variant="caption"
-                      color="textSecondary"
-                      gutterBottom
-                    >
-                      <b>{formartDateTime(c.date_time)}</b>
-
-                      {/* Delete comment*/}
-
-                      {props.loginUser._id == c.user_id && (
-                        <IconButton
-                          title="Delete the comment"
-                          onClick={() => handleCommentDetele(c._id, photo._id)}
-                        >
-                          <DeleteOutlineIcon fontSize="small" />
-                        </IconButton>
-                      )}
-
-
-                    </Typography>
-
-                    <Typography variant="body1">
-                      {`"${c.comment}"`}
-                      <Divider />
-                    </Typography>
-                  </div>
-                )))}
-                {/* new comment */}
 
                 <div className="comment-dialog">
                   <Chip
-                    label="Reply"
-                    onClick={()=>handleClickOpen(photo._id)}
+                    key={index}
+                    label="Xem"
+                    onClick={()=>handleClickOpen(index)}
                     style={{
                       backgroundColor: "#abd1c6",
                       border: "1px solid black",
                     }}
                   />
                 </div>
-
-                <Dialog open={open} onClose={handleClickClose}>
-                  <DialogContent>
-                    <DialogContentText>Bình luận</DialogContentText>
-                    <TextField
-                      value={comment}
-                      onChange={(event) => setComment(event.target.value)}
-                      autoFocus
-                      multiline
-                      margin="dense"
-                      fullWidth
-                    />
-                  </DialogContent>
-                  <DialogActions>
-                    <Button onClick={handleClickClose}>Cancel</Button>
-                    <Button
-                      onClick={(e) => handleCommentSubmit()}
-                      style={{
-                        backgroundColor: "#79CFF5",
-                        border: "1px solid black",
-                      }}
-                    >
-                      Submit
-                    </Button>
-                  </DialogActions>
-                </Dialog>
               </CardContent>
             </Card>
           </Grid>
         ))}
+
+        {data[photoId] && 
+          (<Dialog 
+            open={open} 
+            onClose={handleClickClose}
+            maxWidth="sm" // 'xs', 'sm', 'md', 'lg', 'xl' 
+            fullWidth={true}
+          >
+              <DialogContent>
+              <Grid>
+                <Card style={{ borderRadius: "14px", boxShadow: "none", margin:'10px' }}>
+                    <CardHeader
+                      avatar={
+                        <Avatar
+                          style={{
+                            backgroundColor: "#5E91F8",
+                            border: "2px solid #222222",
+                          }}
+                        >
+                          {curUser.first_name[0]}
+                        </Avatar>
+                      }
+                      title={
+                        <Typography>{`${curUser.first_name} ${curUser.last_name}`}</Typography>
+                      }
+                      subheader={formartDateTime(data[photoId].date_time)}
+                      action={
+                        props.loginUser._id === curUser._id && (
+                          
+                          // Button delete photo
+                          <IconButton
+                            title="Remove the photo"
+                            onClick={() => handlePhotoDelete(photo._id)}
+                          >
+                            <DeleteOutlineIcon />
+                          </IconButton>
+                        )
+                      }
+                    />
+                    {/* postContent  */}
+
+                    <Typography variant="subtitle1" style={{ margin: "5px 10px", marginTop: '0px' }}>
+                      {data[photoId].post_content}
+                    </Typography>
+
+                    {/* img */}
+                    <CardMedia
+                      style={{ objectFit: "contain", width: '100%', height:'auto' }}
+                      component="img"
+                      image={data[photoId].file_name}
+                      alt=""
+                    />
+
+                    <CardContent style={{ paddingTop: "0" }}>
+                    {data[photoId].comments.length > 0 && (
+                      <Typography
+                        variant="subtitle1"
+                        style={{ marginBottom: "5px" }}
+                      >
+                        Bình luận:
+                        <Divider />
+                      </Typography>
+                    )}
+                    {data[photoId].comments.length>0 && (data[photoId].comments.map((c) => (
+                      <div key={data[photoId]._id} style={{ marginBottom: "10px" }}>
+                        {c.user &&(<Link
+                          onClick={() => navigate(`/users/${c.user._id}`)}
+                          variant="subtitle2"
+                          style={{ marginRight: "5px",  cursor: 'pointer' }}
+                        >
+                          (<b style={{ fontSize: "14px" }}>
+                            {`${c.user.first_name} ${c.user.last_name}`}
+                          </b>)
+                        </Link> )}
+                        <Typography
+                          variant="caption"
+                          color="textSecondary"
+                          gutterBottom
+                        >
+                          <b>{formartDateTime(c.date_time)}</b>
+
+                          {/* Delete comment*/}
+
+                          {props.loginUser._id == c.user_id && (
+                            <IconButton
+                              title="Delete the comment"
+                              onClick={() => handleCommentDetele(c._id, data[photoId]._id)}
+                            >
+                              <DeleteOutlineIcon fontSize="small" />
+                            </IconButton>
+                          )}
+
+
+                        </Typography>
+
+                        <Typography variant="body1">
+                          {`"${c.comment}"`}
+                          <Divider />
+                        </Typography>
+                      </div>
+                    )))}
+
+                      </CardContent>
+                </Card>
+              </Grid>
+              </DialogContent>
+              <DialogActions>
+                <TextField
+                  value={comment}
+                  onChange={(event) => setComment(event.target.value)}
+                  autoFocus
+                  multiline
+                  placeholder="Bình luận tại đây"
+                  margin="dense"
+                  style={{width: "75%",}}
+                />
+                {/* <Button onClick={handleClickClose}>Cancel</Button> */}
+                <Button
+                  onClick={(e) => handleCommentSubmit()}
+                  style={{
+                    backgroundColor: "#79CFF5",
+                    border: "1px solid black",
+                    fontSize: "12px", 
+                    textTransform: "none",
+                    width: "100px",
+                  }}
+                >
+                  Bình luận
+                </Button>
+          </DialogActions>
+        </Dialog> )}
       </Grid>
+
     );
   }
 }
+
+
+//   if (curUser && data.length > 0 && props.loginUser) {
+//     {console.log("tesst data", data[0].comments)}
+//     return (
+//       <Grid container justifyContent="flex-start" >
+//         {data.map((photo) => (
+//           <Grid item xs={4} >
+//             {/* post layout  */}
+//             <Card style={{ borderRadius: "14px", border: "2px solid #444444", margin:'10px' }}>
+//               <CardHeader
+//                 avatar={
+//                   <Avatar
+//                     style={{
+//                       backgroundColor: "#5E91F8",
+//                       border: "2px solid #222222",
+//                     }}
+//                   >
+//                     {curUser.first_name[0]}
+//                   </Avatar>
+//                 }
+//                 title={
+//                   <Typography>{`${curUser.first_name} ${curUser.last_name}`}</Typography>
+//                 }
+//                 subheader={formartDateTime(photo.date_time)}
+//                 action={
+//                   props.loginUser._id === curUser._id && (
+                    
+//                     // Button delete photo
+//                     <IconButton
+//                       title="Remove the photo"
+//                       onClick={() => handlePhotoDelete(photo._id)}
+//                     >
+//                       <DeleteOutlineIcon />
+//                     </IconButton>
+//                   )
+//                 }
+//               />
+//               {/* postContent  */}
+
+//               <Typography variant="subtitle1" style={{ margin: "5px 10px", marginTop: '0px' }}>
+//                 {photo.post_content}
+//               </Typography>
+
+//               {/* img */}
+//               <CardMedia
+//                 style={{ objectFit: "contain", width: '100%', height:'auto' }}
+//                 component="img"
+//                 image={photo.file_name}
+//                 alt=""
+//               />
+
+//               {/* Comment layout */}
+              // <CardContent style={{ paddingTop: "0" }}>
+              //   {photo.comments && (
+              //     <Typography
+              //       variant="subtitle1"
+              //       style={{ marginBottom: "5px" }}
+              //     >
+              //       Comments:
+              //       <Divider />
+              //     </Typography>
+              //   )}
+              //   {photo.comments.length>0 && (photo.comments.map((c) => (
+              //     <div key={photo._id} style={{ marginBottom: "10px" }}>
+              //       {c.user &&(<Link
+              //         onClick={() => navigate(`/users/${c.user._id}`)}
+              //         variant="subtitle2"
+              //         style={{ marginRight: "5px",  cursor: 'pointer' }}
+              //       >
+              //         (<b style={{ fontSize: "14px" }}>
+              //           {`${c.user.first_name} ${c.user.last_name}`}
+              //         </b>)
+              //       </Link> )}
+              //       <Typography
+              //         variant="caption"
+              //         color="textSecondary"
+              //         gutterBottom
+              //       >
+              //         <b>{formartDateTime(c.date_time)}</b>
+
+              //         {/* Delete comment*/}
+
+              //         {props.loginUser._id == c.user_id && (
+              //           <IconButton
+              //             title="Delete the comment"
+              //             onClick={() => handleCommentDetele(c._id, photo._id)}
+              //           >
+              //             <DeleteOutlineIcon fontSize="small" />
+              //           </IconButton>
+              //         )}
+
+
+              //       </Typography>
+
+              //       <Typography variant="body1">
+              //         {`"${c.comment}"`}
+              //         <Divider />
+              //       </Typography>
+              //     </div>
+              //   )))}
+              //   {/* new comment */}
+
+              //   <div className="comment-dialog">
+              //     <Chip
+              //       label="Reply"
+              //       onClick={()=>handleClickOpen(photo._id)}
+              //       style={{
+              //         backgroundColor: "#abd1c6",
+              //         border: "1px solid black",
+              //       }}
+              //     />
+              //   </div>
+
+              //   <Dialog open={open} onClose={handleClickClose}>
+              //     <DialogContent>
+              //       <DialogContentText>Bình luận</DialogContentText>
+                    // <TextField
+                    //   value={comment}
+                    //   onChange={(event) => setComment(event.target.value)}
+                    //   autoFocus
+                    //   multiline
+                    //   margin="dense"
+                    //   fullWidth
+                    // />
+              //     </DialogContent>
+              //     <DialogActions>
+              //       <Button onClick={handleClickClose}>Cancel</Button>
+              //       <Button
+              //         onClick={(e) => handleCommentSubmit()}
+              //         style={{
+              //           backgroundColor: "#79CFF5",
+              //           border: "1px solid black",
+              //         }}
+              //       >
+              //         Submit
+              //       </Button>
+              //     </DialogActions>
+              //   </Dialog>
+              // </CardContent>
+//             </Card>
+//           </Grid>
+//         ))}
+//       </Grid>
+//     );
+//   }
+// }
 export default UserPhotos;
